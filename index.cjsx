@@ -4,17 +4,26 @@
 fs = require 'fs-extra'
 path = require 'path-extra'
 
-seq = 0
+INTERVAL = 1200     # seconds, time for a new tip
+STICKY_TIME = 30    # seconds, time that the tip can't be refreshed by a "default"
+list = null
 
-update = (list) ->
-  window.log list[seq]
-  seq = (seq+1) % list.length
+update = ->
+  window.log list[Math.floor(Math.random() * list.length)],
+    priority: 1
+    stickyFor: STICKY_TIME*1000
+  setTimeout update, INTERVAL*1000, list
+
+firstUpdate = ->
+  window.removeEventListener 'poi.alert', firstUpdate
+  update list
 
 fs.readJSON path.join(__dirname, 'dyk-contents.json'), (err, packageObj) ->
+  list = packageObj
   if !packageObj
-    console.log 'Reading dyk-contents.json failed: ', err
+    console.error 'Reading dyk-contents.json failed: ', err
   else
-    setInterval update, 1000, packageObj
+    window.addEventListener 'poi.alert', firstUpdate
 
 module.exports =
   name: 'DoYouKnow'
